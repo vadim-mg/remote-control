@@ -1,21 +1,21 @@
-import { mouseCommand, drawCommand } from "./mouseController.js"
+import { mouseCommand } from "../commands/mouseCommands.js"
+import { drawCommand } from "../commands/drawCommands.js"
+import { printCommand } from "../commands/printCommands.js"
 
 export const controller = async (message: string): Promise<string | undefined> => {
 
-  console.log(message)
-
-
   const [command, type, ...args] = message.split(/\ |\_/)
 
-  // console.log(command)
-  // console.log(type)
-  console.log(args)
+  let result = ''
   switch (command) {
     case 'mouse':
-      return (await mouseCommand(type, args))
+      result = await mouseCommand(type, args)
+      break
     case 'draw':
-      return (await drawCommand(type, args))
-    default:
-      return undefined
+      result = await drawCommand(type, args)
+      break
+    case 'prnt':
+      result = await printCommand(type, args)
   }
+  return [command, type].join('_') + ' ' + result
 }
