@@ -1,29 +1,26 @@
-import { WebSocketServer } from "ws";
-import { controller } from "../controllers/controller.js";
+import { WebSocketServer, createWebSocketStream } from "ws";
+import { Controller } from "../controllers/controller.js";
 
+class wsServer extends WebSocketServer {
 
-class RemoteControlServer extends WebSocketServer {
+  constructor(port: number, callback?: (() => void) | undefined) {
+    super({ port }, callback)
 
-  constructor(port: number) {
-    super({ port })
+    this.on('connection', (ws, req) => {
+      console.log(`Websocket connection started...`)
 
-    this.on('connection', ws => {
-      console.log('Connection accepted!')
-      ws.on('message', async (data) => {
-        console.log(data)
-        const message = data.toString()
-        const result = await controller(message)
-        ws.send(result || message)
-      });
+      ws.on('close', () => {
+        console.log('Websocket connection closed. Waiting new connection...')
+      })
+
+      const duplex = createWebSocketStream(ws, { decodeStrings: false, encoding: 'utf8' });
+      duplex.on('error', console.error);
+      duplex.pipe(new Controller((chunk: string) => duplex.write(chunk)))
     })
 
-    this.on('close', () => {
-      // ws.send('Good bye!')
-      console.log('Good bye!')
-    })
   }
 }
 
 
 
-export { RemoteControlServer }
+export { wsServer }
