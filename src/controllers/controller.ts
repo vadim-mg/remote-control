@@ -1,7 +1,7 @@
 import { mouseCommand } from "../commands/mouseCommands.js"
 import { drawCommand } from "../commands/drawCommands.js"
 import { printCommand } from "../commands/printCommands.js"
-import { Transform, TransformCallback} from "stream"
+import { Transform, TransformCallback } from "stream"
 
 
 
