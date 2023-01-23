@@ -18,6 +18,9 @@ class wsServer extends WebSocketServer {
         console.log(`Received: ${data}`)
         const writeToDuplex = (chunk: string) => duplex.write(chunk)
         const controller = new Controller(writeToDuplex)
+        controller.on('error', (err) => {
+          console.error(`Error:${err.message}`)
+        })
         controller.write(data)
       })
     })

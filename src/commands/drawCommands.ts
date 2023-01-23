@@ -1,45 +1,66 @@
-import { mouse, Point, Button, straightTo } from "@nut-tree/nut-js";
+import { mouse, Point, Button, Region, straightTo, getActiveWindow } from "@nut-tree/nut-js";
 
 
-const drawAccuracy = async (x: number, y: number) => {
+const drawAccuracy = async (point: Point, region: Region) => {
   await mouse.pressButton(Button.LEFT)
-  await mouse.move(straightTo(new Point(x, y)))
+  await mouse.move(await straightTo(point))
   await mouse.releaseButton(Button.LEFT)
+  if (!inRegion(point, region)) {
+    throw Error('MouseOverCurrentWindow')
+  }
 }
 
-const draw_rectangle = async (width: number, length: number) => {
-  const { x, y } = await mouse.getPosition()
-  await drawAccuracy(x + width, y)
-  await drawAccuracy(x + width, y + length)
-  await drawAccuracy(x, y + length)
-  await drawAccuracy(x, y)
+
+const inRegion = (point: Point, region: Region) => {
+  if (point.x < region.left
+    || point.x > region.left + region.width
+    || point.y < region.top
+    || point.y > region.top + region.height) {
+    return false
+  }
+  return true
+}
+
+
+const drawRectangle = async (width: number, length: number) => {
+  const activeWindow = await getActiveWindow()
+  const region = await activeWindow.region
+  const point = await mouse.getPosition()
+
+  point.x += width
+  await drawAccuracy(point, region)
+  point.y += length
+  await drawAccuracy(point, region)
+  point.x -= width
+  await drawAccuracy(point, region)
+  point.y -= length
+  await drawAccuracy(point, region)
   return ''
 }
 
 
-// написать обработку для больших чисел!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+const drawCircle = async (width: number) => {
+  const activeWindow = await getActiveWindow()
+  const region = await activeWindow.region
 
-const draw_circle = async (width: number) => {
   const r = width / 2
-  const countPoints = width * 2
+  const countPoints = 720
+  const rad = Math.PI * 2 / countPoints
 
   const startPoint = await mouse.getPosition()
+
   let point = new Point(startPoint.x, startPoint.y)
 
   let i = 0
   await mouse.pressButton(Button.LEFT)
-  while (i <= countPoints) {
-    let x = i < width ? i : countPoints - i
-    let y = (i < width ? 1 : -1) * Math.sqrt(Math.pow(r, 2) - Math.pow(r - x, 2))
-    point.x = Math.round(startPoint.x + x)
-    point.y = Math.round(startPoint.y + y)
-    await mouse.move(straightTo(point))
-
-    if (i === width || i === countPoints) {
-      point.y = startPoint.y //fit lasts point for semicircle
-      await mouse.move(straightTo(point))
+  while (i++ <= countPoints) {
+    point.x = Math.round(startPoint.x + r - r * Math.cos(rad * i))
+    point.y = Math.round(startPoint.y + r * Math.sin(rad * i))
+    if (!inRegion(point, region)) {
+      await mouse.releaseButton(Button.LEFT)
+      throw Error('MouseOverCurrentWindow')
     }
-    i += 2
+    await mouse.move(await straightTo(point))
   }
   await mouse.releaseButton(Button.LEFT)
   return ''
@@ -49,11 +70,11 @@ const draw_circle = async (width: number) => {
 const drawCommand = async (type: string, [width, length]: string[]) => {
   switch (type) {
     case 'rectangle':
-      return await draw_rectangle(+width, +length)
+      return await drawRectangle(+width, +length)
     case 'square':
-      return await draw_rectangle(+width, +width)
+      return await drawRectangle(+width, +width)
     case 'circle':
-      return await draw_circle(+width)
+      return await drawCircle(+width)
     default:
       return ''
   }

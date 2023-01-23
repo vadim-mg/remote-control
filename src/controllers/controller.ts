@@ -29,7 +29,7 @@ class Controller extends Transform {
       this.cb(result)
       callback(null, result);
     } catch (err: any) {
-      console.log('Error')
+      this.cb(`Error:${err.message}`)
       callback(err);
     }
   }
